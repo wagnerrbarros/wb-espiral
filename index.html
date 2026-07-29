@@ -1,0 +1,575 @@
+﻿﻿﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espiral de Fibonacci 3D — Camadas da Consciência</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0f;
+    color: #e0e0e0;
+    font-family: "Inter", system-ui, sans-serif;
+    overflow: hidden;
+  }
+  #canvas-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+  canvas { display: block; }
+
+  /* Painel de informações */
+  #info-panel {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: rgba(10,10,15,0.92);
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 14px 18px;
+    max-width: 280px;
+    backdrop-filter: blur(8px);
+    z-index: 10;
+  }
+  #info-panel h1 {
+    color: #f0c040;
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  #info-panel p {
+    color: #888;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  #info-panel .camada-atual {
+    color: #4ade80;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+  #info-panel .portal-info {
+    color: #f0c040;
+    font-size: 0.8rem;
+    margin-top: 4px;
+  }
+
+  /* Legenda */
+  #legend {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: rgba(10,10,15,0.92);
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 12px 16px;
+    backdrop-filter: blur(8px);
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 500px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: #aaa;
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+  .legend-item:hover { background: rgba(255,255,255,0.05); }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Controles */
+  #controls {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(10,10,15,0.92);
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 12px 14px;
+    backdrop-filter: blur(8px);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ctrl-btn {
+    background: #1a1a2e;
+    border: 1px solid #333;
+    color: #ccc;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  .ctrl-btn:hover {
+    background: #222244;
+    border-color: #f0c040;
+    color: #f0c040;
+  }
+  .ctrl-btn.active {
+    background: #f0c04022;
+    border-color: #f0c040;
+    color: #f0c040;
+  }
+
+  /* Tooltip 3D */
+  #tooltip3d {
+    position: absolute;
+    background: rgba(20,20,35,0.95);
+    border: 1px solid #444;
+    color: #e0e0e0;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 20;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+    max-width: 220px;
+    line-height: 1.5;
+  }
+  #tooltip3d.visible { opacity: 1; }
+  #tooltip3d strong {
+    color: #f0c040;
+    display: block;
+    margin-bottom: 3px;
+  }
+  #tooltip3d code {
+    background: #222;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #4ade80;
+    font-size: 0.72rem;
+  }
+
+  /* Eixo de rotação info */
+  #axis-info {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    color: #555;
+    font-size: 0.7rem;
+    text-align: right;
+    z-index: 10;
+  }
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<div id="canvas-container">
+  <div id="info-panel">
+    <h1>🌀 Espiral de Fibonacci 3D</h1>
+    <p>Camadas matemáticas delimitadas por ângulos múltiplos de 90°. Cada portal marca onde o raio multiplica por φ ≈ 1.618.</p>
+    
+    <div class="camada-atual" id="camadaAtual">Passe o mouse sobre uma camada</div>
+    <div class="portal-info" id="portalInfo"></div>
+  </div>
+
+  <div id="controls">
+    <button class="ctrl-btn active" onclick="toggleLayer('all')" id="btn-all">Tudo</button>
+    <button class="ctrl-btn" onclick="toggleLayer('spiral')" id="btn-spiral">Espiral</button>
+    <button class="ctrl-btn" onclick="toggleLayer('zones')" id="btn-zones">Camadas</button>
+    <button class="ctrl-btn" onclick="toggleLayer('portals')" id="btn-portals">Portais</button>
+    <button class="ctrl-btn" onclick="toggleLayer('quadrants')" id="btn-quadrants">Quadrantes</button>
+    <button class="ctrl-btn" onclick="toggleAnimation()" id="btn-anim">⏸ Pausar</button>
+    <button class="ctrl-btn" onclick="resetCamera()">⟲ Reset Câmera</button>
+  </div>
+
+  <div id="legend"></div>
+  <div id="axis-info">🖱️ Arraste para rotacionar &nbsp;|&nbsp; Scroll para zoom &nbsp;|&nbsp; Clique direito para pan</div>
+  <div id="tooltip3d"></div>
+</div>
+
+<!-- Three.js via CDN -->
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+
+// ===================== CONFIGURAÇÃO =====================
+const PHI = (1 + Math.sqrt(5)) / 2;
+const B = Math.log(PHI) / (Math.PI / 2);
+const A = 0.5;
+const LAYERS_COUNT = 8;
+const SPACING = 1.0;
+
+const COLORS = [
+  0x8B7355, 0x9B59B6, 0xE74C3C, 0x2980B9,
+  0xE67E22, 0x27AE60, 0xF1C40F, 0x1ABC9C
+];
+
+const COLOR_NAMES = [
+  "#8B7355","#9B59B6","#E74C3C","#2980B9",
+  "#E67E22","#27AE60","#F1C40F","#1ABC9C"
+];
+
+// ===================== CENA =====================
+const container = document.getElementById("canvas-container");
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a0f);
+scene.fog = new THREE.FogExp2(0x0a0a0f, 0.008);
+
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
+camera.position.set(30, 30, 35);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+container.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 4, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.minDistance = 5;
+controls.maxDistance = 120;
+
+// Luzes
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+scene.add(ambientLight);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(10, 20, 10);
+scene.add(dirLight);
+
+const pointLight = new THREE.PointLight(0xf0c040, 0.5, 100);
+pointLight.position.set(0, 5, 0);
+scene.add(pointLight);
+
+// ===================== GERAR ESPIRAL =====================
+const spiralPoints = [];
+for (let i = 0; i < 1400; i++) {
+  const theta = i * 0.012;
+  const r = A * Math.exp(B * theta);
+  spiralPoints.push({
+    theta,
+    thetaDeg: theta * 180 / Math.PI,
+    r,
+    x: r * Math.cos(theta),
+    y: theta / (Math.PI / 2) * SPACING,
+    z: r * Math.sin(theta)
+  });
+}
+
+// Encontrar portais nos ângulos múltiplos de 90°
+const portals = [];
+for (let n = 0; n <= LAYERS_COUNT; n++) {
+  const target = n * Math.PI / 2;
+  let bestIdx = 0, bestDiff = Infinity;
+  for (let i = 0; i < spiralPoints.length; i++) {
+    const diff = Math.abs(spiralPoints[i].theta - target);
+    if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
+  }
+  portals.push({
+    n,
+    idx: bestIdx,
+    ...spiralPoints[bestIdx]
+  });
+}
+
+// Definir camadas
+const camadas = [];
+for (let i = 0; i < LAYERS_COUNT; i++) {
+  const start = portals[i];
+  const end = portals[i+1];
+  const pts = spiralPoints.slice(start.idx, end.idx + 1);
+  camadas.push({
+    n: i + 1,
+    start,
+    end,
+    pts,
+    color: COLORS[i],
+    colorName: COLOR_NAMES[i],
+    ratio: end.r / start.r
+  });
+}
+
+// ===================== GRUPOS =====================
+const spiralGroup = new THREE.Group();
+const zonesGroup = new THREE.Group();
+const portalsGroup = new THREE.Group();
+const quadrantsGroup = new THREE.Group();
+const pathGroup = new THREE.Group();
+scene.add(spiralGroup, zonesGroup, portalsGroup, quadrantsGroup, pathGroup);
+
+// ===================== ESPIRAL (TUBOS COLORIDOS) =====================
+camadas.forEach((cam, ci) => { const curve = new THREE.CatmullRomCurve3(
+    cam.pts.map(p => new THREE.Vector3(p.x, p.y, p.z))
+  );
+  const geometry = new THREE.TubeGeometry(curve, cam.pts.length, 0.15, 8, false);
+  const material = new THREE.MeshStandardMaterial({
+    color: cam.color,
+    emissive: cam.color,
+    emissiveIntensity: 0.3,
+    roughness: 0.4,
+    metalness: 0.6
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.userData = { type: "camada", camada: ci + 1, info: cam };
+  spiralGroup.add(mesh);
+});
+
+// ===================== ZONAS DAS CAMADAS (DISCOS) =====================
+camadas.forEach((cam, ci) => { const s = cam.start;
+  const e = cam.end;
+  const innerR = s.r * 0.5;
+  const outerR = e.r * 1.1;
+  const arcLength = e.theta - s.theta;
+
+  const shape = new THREE.Shape();
+  shape.absarc(0, 0, outerR, s.theta, e.theta, false);
+  shape.absarc(0, 0, innerR, e.theta, s.theta, true);
+
+  const geometry = new THREE.ShapeGeometry(shape, 32);
+  const material = new THREE.MeshBasicMaterial({
+    color: cam.color,
+    transparent: true,
+    opacity: 0.06,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = (s.y + e.y) / 2;
+  mesh.userData = { type: "zona", camada: ci + 1, info: cam };
+  zonesGroup.add(mesh);
+});
+
+// ===================== PORTAIS (ESFERAS DOURADAS) =====================
+portals.forEach((p, pi) => { if (pi === 0) return;
+  const geometry = new THREE.SphereGeometry(0.25 + p.r * 0.02, 16, 16);
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xf0c040,
+    emissive: 0xf0c040,
+    emissiveIntensity: 0.8,
+    roughness: 0.2,
+    metalness: 0.9
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(p.x, p.y, p.z);
+  mesh.userData = {
+    type: "portal",
+    portalN: pi,
+    info: p,
+    prevR: portals[pi-1].r
+  };
+  portalsGroup.add(mesh);
+
+  // Anel ao redor do portal
+  const ringGeo = new THREE.TorusGeometry(0.5 + p.r * 0.025, 0.03, 8, 32);
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0xf0c040, transparent: true, opacity: 0.4 });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.position.set(p.x, p.y, p.z);
+  ring.rotation.x = Math.PI / 2;
+  portalsGroup.add(ring);
+});
+
+// Centro
+const centerGeo = new THREE.SphereGeometry(0.3, 16, 16);
+const centerMat = new THREE.MeshStandardMaterial({ color: 0xf0c040, emissive: 0xf0c040, emissiveIntensity: 0.5 });
+const centerMesh = new THREE.Mesh(centerGeo, centerMat);
+centerMesh.position.set(0, 0, 0);
+portalsGroup.add(centerMesh);
+
+// ===================== LINHAS DOS QUADRANTES =====================
+const maxR = portals[portals.length-1].r * 1.3;
+for (let n = 0; n < 8; n++) {
+  const theta = n * Math.PI / 2;
+  const points = [
+    new THREE.Vector3(0, -0.5, 0),
+    new THREE.Vector3(maxR * Math.cos(theta), -0.5, maxR * Math.sin(theta))
+  ];
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const material = new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.5 });
+  const line = new THREE.Line(geometry, material);
+  quadrantsGroup.add(line);
+}
+
+// ===================== TRAJETÓRIA (PARTÍCULA) =====================
+const particleGeo = new THREE.SphereGeometry(0.4, 16, 16);
+const particleMat = new THREE.MeshStandardMaterial({
+  color: 0xffffff,
+  emissive: 0xffffff,
+  emissiveIntensity: 2.0
+});
+const particle = new THREE.Mesh(particleGeo, particleMat);
+pathGroup.add(particle);
+
+let particleIdx = 0;
+let animating = true;
+
+// ===================== GRID =====================
+const gridHelper = new THREE.GridHelper(80, 40, 0x1a1a2e, 0x111118);
+gridHelper.position.y = -1;
+scene.add(gridHelper);
+
+// ===================== LEGENDA HTML =====================
+const legendEl = document.getElementById("legend");
+camadas.forEach((cam, ci) => {
+  const item = document.createElement("div");
+  item.className = "legend-item";
+  item.innerHTML = "<span class=\"legend-dot\" style=\"background:" + cam.colorName + ";\"></span> C" + (ci+1);
+  item.addEventListener("mouseenter", () => highlightCamada(ci));
+  item.addEventListener("mouseleave", () => unhighlightCamada());
+  legendEl.appendChild(item);
+});
+
+// ===================== INTERAÇÃO =====================
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+const tooltip = document.getElementById("tooltip3d");
+const camadaAtual = document.getElementById("camadaAtual");
+const portalInfo = document.getElementById("portalInfo");
+
+function onMouseMove(event) {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects([...spiralGroup.children, ...zonesGroup.children, ...portalsGroup.children]);
+
+  if (intersects.length > 0) {
+    const obj = intersects[0].object;
+    const data = obj.userData;
+    tooltip.style.left = (event.clientX + 15) + "px";
+    tooltip.style.top = (event.clientY - 10) + "px";
+    tooltip.classList.add("visible");
+
+    if (data.type === "camada" || data.type === "zona") {
+      const c = data.info;
+      tooltip.innerHTML = "<strong>Camada " + c.n + "</strong>\n        θ: <code>" + Math.round(c.start.thetaDeg) + "° → " + Math.round(c.end.thetaDeg) + "°</code><br>\n        Raio: <code>" + c.start.r.toFixed(2) + " → " + c.end.r.toFixed(2) + "</code><br>\n        Razão r·φ: <code>" + c.ratio.toFixed(4) + "</code>";
+      camadaAtual.textContent = "Camada " + c.n + " — θ " + Math.round(c.start.thetaDeg) + "°→" + Math.round(c.end.thetaDeg) + "°";
+      camadaAtual.style.color = c.colorName;
+      portalInfo.textContent = "";
+    } else if (data.type === "portal") {
+      const p = data.info;
+      const ratio = (p.r / data.prevR).toFixed(4);
+      tooltip.innerHTML = "<strong>🌀 Portal " + data.portalN + "</strong>\n        Ângulo: <code>" + Math.round(p.thetaDeg) + "°</code><br>\n        Raio: <code>" + p.r.toFixed(2) + "</code><br>\n        r/r_ant = <code>" + ratio + "</code> ≈ φ";
+      portalInfo.textContent = "Portal " + data.portalN + " — θ " + Math.round(p.thetaDeg) + "° | r·φ = " + ratio;
+      camadaAtual.textContent = "";
+    }
+  } else {
+    tooltip.classList.remove("visible");
+  }
+}
+
+window.addEventListener("mousemove", onMouseMove);
+
+// ===================== HIGHLIGHT =====================
+let highlightedCamada = -1;
+
+function highlightCamada(ci) {
+  highlightedCamada = ci;
+  spiralGroup.children.forEach((mesh, i) => {
+    mesh.material.emissiveIntensity = (i === ci) ? 1.2 : 0.1;
+  });
+  zonesGroup.children.forEach((mesh, i) => {
+    mesh.material.opacity = (i === ci) ? 0.18 : 0.03;
+  });
+}
+
+function unhighlightCamada() {
+  highlightedCamada = -1;
+  spiralGroup.children.forEach(mesh => {
+    mesh.material.emissiveIntensity = 0.3;
+  });
+  zonesGroup.children.forEach(mesh => {
+    mesh.material.opacity = 0.06;
+  });
+}
+
+// ===================== CONTROLES =====================
+const visibility = { all: true, spiral: true, zones: true, portals: true, quadrants: true };
+
+function toggleLayer(mode) {
+  if (mode === "all") {
+    const allOn = !visibility.all;
+    visibility.all = allOn;
+    visibility.spiral = allOn;
+    visibility.zones = allOn;
+    visibility.portals = allOn;
+    visibility.quadrants = allOn;
+    spiralGroup.visible = allOn;
+    zonesGroup.visible = allOn;
+    portalsGroup.visible = allOn;
+    quadrantsGroup.visible = allOn;
+    document.querySelectorAll(".ctrl-btn").forEach(b => {
+      if (b.id !== "btn-anim" && b.id !== "btn-reset") b.classList.toggle("active", allOn);
+    });
+    document.getElementById("btn-all").classList.toggle("active", allOn);
+  } else {
+    visibility[mode] = !visibility[mode];
+    if (mode === "spiral") spiralGroup.visible = visibility.spiral;
+    if (mode === "zones") zonesGroup.visible = visibility.zones;
+    if (mode === "portals") portalsGroup.visible = visibility.portals;
+    if (mode === "quadrants") quadrantsGroup.visible = visibility.quadrants;
+    document.getElementById("btn-" + mode).classList.toggle("active", visibility[mode]);
+  }
+}
+
+function toggleAnimation() {
+  animating = !animating;
+  document.getElementById("btn-anim").textContent = animating ? "⏸ Pausar" : "▶ Animar";
+}
+
+function resetCamera() {
+  camera.position.set(30, 30, 35);
+  controls.target.set(0, 0, 0);
+  controls.update();
+}
+
+// ===================== ANIMAÇÃO =====================
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+
+  if (animating && spiralPoints.length > 0) {
+    particleIdx += 0.4;
+    if (particleIdx >= spiralPoints.length) particleIdx = 0;
+    const p = spiralPoints[Math.floor(particleIdx)];
+    particle.position.set(p.x, p.y + 0.3, p.z);
+
+    // Anel pulsante nos portais
+    const time = Date.now() * 0.001;
+    portalsGroup.children.forEach((child, i) => {
+      if (child.geometry && child.geometry.type === "TorusGeometry") {
+        const scale = 1 + Math.sin(time * 2 + i) * 0.1;
+        child.scale.set(scale, scale, scale);
+      }
+    });
+  }
+
+  renderer.render(scene, camera);
+}
+
+// ===================== RESIZE =====================
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+animate();
+</script>
+</body>
+</html>
+
+
