@@ -1,0 +1,47 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Test Three.js</title>
+<style>
+  body { margin:0; background:#111; color:lime; font-family:monospace; }
+  #status { position:absolute; top:10px; left:10px; z-index:99; background:rgba(0,0,0,0.8); padding:8px 14px; border-radius:6px; font-size:14px; }
+  .fail { color:#f44 !important; }
+</style>
+</head>
+<body>
+<div id="status">⏳ Carregando...</div>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script>
+const s = document.getElementById('status');
+try {
+  if (typeof THREE === 'undefined') { s.innerHTML = '❌ THREE undefined'; s.className='fail'; }
+  else {
+    s.innerHTML = '✅ THREE carregado<br>';
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e);
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(3,2,5);
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+    const geo = new THREE.BoxGeometry(1,1,1);
+    const mat = new THREE.MeshStandardMaterial({ color:0xff6600, emissive:0xff4400, emissiveIntensity:0.5 });
+    const cube = new THREE.Mesh(geo, mat);
+    scene.add(cube);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const dl = new THREE.DirectionalLight(0xffffff, 1);
+    dl.position.set(1,2,3);
+    scene.add(dl);
+    s.innerHTML += '✅ Cubo criado<br>';
+    function anim() {
+      requestAnimationFrame(anim);
+      cube.rotation.x += 0.01;
+      cube.rotation.y += 0.02;
+      renderer.render(scene, camera);
+    }
+    anim();
+    s.innerHTML += '✅ Animação rodando!';
+  }
+} catch(e) { s.innerHTML = '❌ ' + e.message; s.className='fail'; }
+</script>
+</body>
+</html>

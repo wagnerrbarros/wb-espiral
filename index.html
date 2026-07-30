@@ -169,6 +169,68 @@
     text-align: right;
     z-index: 10;
   }
+
+  /* Botão toggle mobile */
+  #mobile-toggle {
+    display: none;
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(10,10,15,0.9);
+    border: 1px solid #444;
+    color: #e0e0e0;
+    font-size: 1.4rem;
+    cursor: pointer;
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  #mobile-toggle:hover {
+    border-color: #f0c040;
+    color: #f0c040;
+  }
+
+  @media (max-width: 768px) {
+    #mobile-toggle { display: flex; }
+    #info-panel, #legend, #controls, #axis-info {
+      display: none;
+    }
+    #info-panel.show, #legend.show, #controls.show, #axis-info.show {
+      display: block;
+    }
+    #info-panel.show {
+      position: fixed;
+      top: 60px;
+      left: 8px;
+      right: 8px;
+      max-width: none;
+      z-index: 90;
+    }
+    #controls.show {
+      position: fixed;
+      top: 60px;
+      right: 8px;
+      z-index: 90;
+    }
+    #legend.show {
+      position: fixed;
+      bottom: 60px;
+      left: 8px;
+      right: 8px;
+      max-width: none;
+      z-index: 90;
+    }
+    #axis-info.show {
+      position: fixed;
+      bottom: 12px;
+      right: 8px;
+      z-index: 90;
+    }
+  }
 </style>
 <base target="_blank">
 </head>
@@ -196,6 +258,7 @@
   <div id="legend"></div>
   <div id="axis-info">🖱️ Arraste para rotacionar &nbsp;|&nbsp; Scroll para zoom &nbsp;|&nbsp; Clique direito para pan</div>
   <div id="tooltip3d"></div>
+  <button id="mobile-toggle">☰</button>
 </div>
 
 <!-- Three.js via CDN -->
@@ -567,9 +630,22 @@ window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-animate();
+
+// ===================== MOBILE TOGGLE =====================
+const mobileToggle = document.getElementById("mobile-toggle");
+mobileToggle.addEventListener("click", () => {
+  const panels = ["info-panel", "controls", "legend", "axis-info"];
+  let showing = document.getElementById(panels[0]).classList.contains("show");
+  panels.forEach(id => {
+    document.getElementById(id).classList.toggle("show");
+  });
+  mobileToggle.textContent = showing ? "☰" : "✕";
+});
+
+
 </script>
 </body>
 </html>
+
 
 
