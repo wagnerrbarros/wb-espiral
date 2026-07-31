@@ -410,7 +410,7 @@ camadas.forEach((cam, ci) => { const s = cam.start;
     depthWrite: false
   });
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.rotation.x = -Math.PI / 2;
+  mesh.rotation.x = Math.PI / 2;
   mesh.position.y = (s.y + e.y) / 2;
   mesh.userData = { type: "zona", camada: ci + 1, info: cam };
   zonesGroup.add(mesh);
@@ -518,7 +518,7 @@ function onMouseMove(event) {
 
     if (data.type === "camada" || data.type === "zona") {
       const c = data.info;
-      tooltip.innerHTML = "<strong>Camada " + c.n + "</strong>\n        θ: <code>" + Math.round(c.start.thetaDeg) + "° → " + Math.round(c.end.thetaDeg) + "°</code><br>\n        Raio: <code>" + c.start.r.toFixed(2) + " → " + c.end.r.toFixed(2) + "</code><br>\n        Razão r·φ: <code>" + c.ratio.toFixed(4) + "</code>";
+      tooltip.innerHTML = "<strong>Camada " + c.n + "</strong>\n        θ: <code>" + Math.round(c.start.thetaDeg) + "° → " + Math.round(c.end.thetaDeg) + "°</code><br>\n        Raio: <code>" + c.start.r.toFixed(2) + " → " + c.end.r.toFixed(2) + "</code><br>\n        r_final/r_inicial: <code>" + c.ratio.toFixed(4) + "</code>";
       camadaAtual.textContent = "Camada " + c.n + " — θ " + Math.round(c.start.thetaDeg) + "°→" + Math.round(c.end.thetaDeg) + "°";
       camadaAtual.style.color = c.colorName;
       portalInfo.textContent = "";
@@ -555,7 +555,7 @@ function unhighlightCamada() {
     mesh.material.emissiveIntensity = 0.3;
   });
   zonesGroup.children.forEach(mesh => {
-    mesh.material.opacity = 0.06;
+    mesh.material.opacity = 0.10;
   });
 }
 
@@ -595,7 +595,7 @@ function toggleAnimation() {
 
 function resetCamera() {
   camera.position.set(30, 30, 35);
-  controls.target.set(0, 0, 0);
+  controls.target.set(0, 4, 0);
   controls.update();
 }
 
